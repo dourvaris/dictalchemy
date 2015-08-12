@@ -7,6 +7,7 @@ Utilities
 from __future__ import absolute_import, division
 
 import copy
+
 from sqlalchemy import inspect
 from sqlalchemy.ext.associationproxy import _AssociationList
 
@@ -42,7 +43,8 @@ def arg_to_dict(arg):
 
 
 def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
-           follow=None, include=None, only=None, method='asdict', **kwargs):
+           follow=None, include=None, only=None, method='asdict',
+           DictClass=dict, **kwargs):
     """Get a dict from a model
 
     Using the `method` parameter makes it possible to have multiple methods
@@ -75,6 +77,7 @@ def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
     :param method: Name of the method that is currently called. This will be \
             the default method used in 'follow' unless another method is\
             set.
+    :param DictClass: Class to be used for resulting dict.
 
     :raises: :class:`dictalchemy.errors.MissingRelationError` \
             if `follow` contains a non-existent relationship.
@@ -115,7 +118,7 @@ def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
                                                      None)) or [])
         attrs = [k for k in columns + synonyms + include if k not in exclude]
 
-    data = dict([(k, getattr(model, k)) for k in attrs])
+    data = DictClass([(k, getattr(model, k)) for k in attrs])
 
     for (rel_key, orig_args) in follow.iteritems():
 
@@ -139,7 +142,7 @@ def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
                     rel_data.append(getattr(child, method)(**args))
                 else:
                     try:
-                        rel_data.append(dict(child))
+                        rel_data.append(DictClass(child))
                         # TypeError is for non-dictable children
                     except TypeError:
                         rel_data.append(copy.copy(child))
@@ -152,7 +155,7 @@ def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
                     rel_data[child_key] = getattr(child, method)(**args)
                 else:
                     try:
-                        rel_data[child_key] = dict(child)
+                        rel_data[child_key] = DictClass(child)
                     except ValueError:
                         rel_data[child_key] = copy.copy(child)
 
@@ -163,7 +166,7 @@ def asdict(model, exclude=None, exclude_underscore=None, exclude_pk=None,
                 if hasattr(child, method):
                     rel_data.append(getattr(child, method)(**args))
                 else:
-                    rel_data.append(dict(child))
+                    rel_data.append(DictClass(child))
 
         elif rel is None:
             rel_data = None
